@@ -11,21 +11,15 @@ class NBLanding extends Application {
     });
   }
 
-  _readConfig() {
-    const raw = game.settings.get("neon-blood-landing", "configJSON");
-    try { return JSON.parse(raw); }
-    catch(e) { ui.notifications.error("Neon Blood Landing settings are invalid JSON. Reverting to defaults."); return NBLanding.defaults(); }
-  }
-
   static defaults() {
     return {
       accessCode: "ELYSIUM",
       openOnLogin: true,
-      worldName: game.world?.title || game.world?.id || "New Elysium — Neon Wastes",
+      worldName: game.world?.title ?? game.world?.id ?? "New Elysium — Neon Wastes",
       heat: 0,
       cred: 0,
       links: {
-        foundry: game?.data?.url || location.origin,
+        foundry: location.origin,
         discord: "https://discord.gg/your-invite",
         rules: "about:blank",
         jobs: "about:blank",
@@ -36,6 +30,15 @@ class NBLanding extends Application {
       },
       nextJob: { title: "Proof of Life: Aegis Intercept", whenISO: "2025-08-15T20:00:00-07:00", count: 3 }
     };
+  }
+
+  _readConfig() {
+    const raw = game.settings.get("neon-blood-landing", "configJSON");
+    try { return JSON.parse(raw); }
+    catch(e) {
+      ui.notifications.error("Neon Blood Landing settings are invalid JSON. Reverting to defaults.");
+      return NBLanding.defaults();
+    }
   }
 
   getData() {
@@ -61,28 +64,32 @@ class NBLanding extends Application {
         return doc.render?.(true);
       }
       if (url.startsWith("foundry://")) {
-        const [, type, id] = url.match(/^foundry:\/\/(\w+)\/(.+)$/) || [];
-        if (type === "journal") {
-          const j = game.journal?.get(id);
-          if (j) return j.sheet.render(true);
-        }
-        if (type === "scene") {
-          if (id === "ACTIVE") {
-            const s = game.scenes?.active;
-            if (s) { await s.view(); return; }
-          } else {
-            const s = game.scenes?.get(id);
-            if (s) { await s.view(); return; }
+        const match = url.match(/^foundry:\/\/(\w+)\/(.+)$/);
+        if (match) {
+          const [, type, id] = match;
+          if (type === "journal") {
+            const j = game.journal?.get(id);
+            if (j) return j.sheet.render(true);
+          }
+          if (type === "scene") {
+            if (id === "ACTIVE") {
+              const s = game.scenes?.active;
+              if (s) { await s.view(); return; }
+            } else {
+              const s = game.scenes?.get(id);
+              if (s) { await s.view(); return; }
+            }
           }
         }
         return ui.notifications.warn("Deep link not recognized");
       }
-      if (/^https?:/.test(url)) return window.open(url, "_blank", "noopener");
+      if (/^https?:/i.test(url)) return window.open(url, "_blank", "noopener");
       ui.notifications.info("Link ready: " + url);
     };
 
     html.find("[data-link]").on("click", ev => openLink(ev.currentTarget.dataset.link));
 
+    // Gate
     const gate = html.find("#nb-gate");
     const input = html.find("#nb-code");
     const unlock = () => {
@@ -94,19 +101,15 @@ class NBLanding extends Application {
       this._setEnabledLinks(true, html[0]);
       return true;
     };
-
     html.find("#nb-unlock").on("click", () => unlock());
     html.find("#nb-remember").on("click", async () => { if (unlock()) await game.settings.set("neon-blood-landing", "remember", true); });
+    if (game.settings.get("neon-blood-landing", "remember")) { gate.addClass("nb-unlocked"); this._setEnabledLinks(true, html[0]); }
 
-    if (game.settings.get("neon-blood-landing", "remember")) {
-      gate.addClass("nb-unlocked");
-      this._setEnabledLinks(true, html[0]);
-    }
-
+    // Ping stub
     html.find("#nb-ping").on("click", async ev => {
       const tgt = ev.currentTarget; tgt.textContent = "Pinging...";
       try {
-        const ok = true;
+        const ok = true; // stub
         html.find("#nb-status").text(ok ? "Server Online" : "Server Offline").attr("data-state", ok ? "ok" : "down");
         html.find("#nb-online").text(Math.floor(Math.random()*5));
       } catch {
@@ -120,9 +123,10 @@ class NBLanding extends Application {
 
   _relativeTime(iso) {
     const d = new Date(iso); const now = new Date();
-    const diff = (d - now) / 1000; const steps = [[60,"second"],[60,"minute"],[24,"hour"],[7,"day"],[4.35,"week"],[12,"month"],[Infinity,"year"]];
-    let val = diff, unit = "second"; for (const [s,u] of steps) { if (Math.abs(val) < s) { unit = u; break; } val /= s; }
-    return new Intl.RelativeTimeFormat(game.i18n.lang, { numeric: "auto" }).format(Math.round(val), unit);
+    const steps = [[60,"second"],[60,"minute"],[24,"hour"],[7,"day"],[4.35,"week"],[12,"month"],[Infinity,"year"]];
+    let diff = (d - now)/1000, unit = "second";
+    for (const [s,u] of steps) { if (Math.abs(diff) < s) { unit = u; break; } diff /= s; }
+    return new Intl.RelativeTimeFormat(game.i18n.lang, { numeric: "auto" }).format(Math.round(diff), unit);
   }
 }
 
@@ -135,7 +139,6 @@ Hooks.once("init", () => {
     type: String,
     default: JSON.stringify(NBLanding.defaults(), null, 2)
   });
-
   game.settings.register("neon-blood-landing", "remember", {
     name: "Remember unlock for all",
     scope: "world",
