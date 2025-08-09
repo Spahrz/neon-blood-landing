@@ -1,0 +1,27 @@
+{
+  "id": "neon-blood-landing",
+  "title": "Neon Blood Landing",
+  "description": "In-Foundry landing hub for Neon Blood with neon UI, job teaser, heat, and quick links.",
+  "version": "1.1.0",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "12",
+    "maximum": "12"
+  },
+  "authors": [
+    {
+      "name": "You"
+    }
+  ],
+  "esmodules": [
+    "scripts/landing.js"
+  ],
+  "styles": [
+    "styles/landing.css"
+  ],
+  "packs": [],
+  "languages": [],
+  "url": "https://github.com/yourname/neon-blood-landing",
+  "manifest": "https://raw.githubusercontent.com/yourname/neon-blood-landing/main/module.json",
+  "download": "https://github.com/yourname/neon-blood-landing/archive/refs/heads/main.zip"
+}
