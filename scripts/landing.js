@@ -13,22 +13,14 @@ class NBLanding extends Application {
 
   static defaults() {
     return {
-      accessCode: "ELYSIUM",
-      openOnLogin: true,
-      worldName: game.world?.title ?? game.world?.id ?? "New Elysium — Neon Wastes",
       heat: 0,
       cred: 0,
-      links: {
-        foundry: location.origin,
-        discord: "https://discord.gg/your-invite",
-        rules: "about:blank",
-        jobs: "about:blank",
-        heat: "about:blank",
-        dossiers: "about:blank",
-        privacy: "about:blank",
-        credits: "about:blank"
-      },
-      nextJob: { title: "Proof of Life: Aegis Intercept", whenISO: "2025-08-15T20:00:00-07:00", count: 3 }
+      nextJob: {
+        title: "Proof of Life: Aegis Intercept",
+        whenISO: "2025-08-15T20:00:00-07:00",
+        count: 3,
+        link: ""
+      }
     };
   }
 
@@ -54,72 +46,25 @@ class NBLanding extends Application {
   activateListeners(html) {
     super.activateListeners(html);
 
-    const openLink = async (key) => {
-      const url = this._link(key);
+    const openLink = async (url) => {
       if (!url) return;
-      if (url.startsWith("uuid:")) {
-        const doc = await fromUuid(url.slice(5));
-        if (!doc) return ui.notifications.warn("Target not found");
-        if (doc.sheet) return doc.sheet.render(true);
-        return doc.render?.(true);
-      }
-      if (url.startsWith("foundry://")) {
-        const match = url.match(/^foundry:\/\/(\w+)\/(.+)$/);
-        if (match) {
-          const [, type, id] = match;
-          if (type === "journal") {
-            const j = game.journal?.get(id);
-            if (j) return j.sheet.render(true);
-          }
-          if (type === "scene") {
-            if (id === "ACTIVE") {
-              const s = game.scenes?.active;
-              if (s) { await s.view(); return; }
-            } else {
-              const s = game.scenes?.get(id);
-              if (s) { await s.view(); return; }
-            }
-          }
-        }
-        return ui.notifications.warn("Deep link not recognized");
-      }
       if (/^https?:/i.test(url)) return window.open(url, "_blank", "noopener");
       ui.notifications.info("Link ready: " + url);
     };
 
-    html.find("[data-link]").on("click", ev => openLink(ev.currentTarget.dataset.link));
+    const jobLink = this._readConfig().nextJob.link;
+    if (jobLink) {
+      html.find("#nb-job-link").on("click", () => openLink(jobLink));
+    }
 
-    // Gate
-    const gate = html.find("#nb-gate");
-    const input = html.find("#nb-code");
-    const unlock = () => {
-      const cfg = this._readConfig();
-      const code = String(input.val() || "").trim().toUpperCase();
-      const ok = code && code === String(cfg.accessCode || "").toUpperCase();
-      if (!ok) return ui.notifications.warn("Access denied. Check the code.");
-      gate.addClass("nb-unlocked");
-      this._setEnabledLinks(true, html[0]);
-      return true;
-    };
-    html.find("#nb-unlock").on("click", () => unlock());
-    html.find("#nb-remember").on("click", async () => { if (unlock()) await game.settings.set("neon-blood-landing", "remember", true); });
-    if (game.settings.get("neon-blood-landing", "remember")) { gate.addClass("nb-unlocked"); this._setEnabledLinks(true, html[0]); }
-
-    // Ping stub
-    html.find("#nb-ping").on("click", async ev => {
-      const tgt = ev.currentTarget; tgt.textContent = "Pinging...";
-      try {
-        const ok = true; // stub
-        html.find("#nb-status").text(ok ? "Server Online" : "Server Offline").attr("data-state", ok ? "ok" : "down");
-        html.find("#nb-online").text(Math.floor(Math.random()*5));
-      } catch {
-        html.find("#nb-status").text("Server Offline").attr("data-state", "down");
-      } finally { tgt.textContent = "Ping Server"; }
+    // GM socket listener to update live
+    game.socket.on("module.neon-blood-landing", data => {
+      if (data.type === "updateConfig" && !game.user.isGM) {
+        game.settings.set("neon-blood-landing", "configJSON", JSON.stringify(data.config));
+        this.render();
+      }
     });
   }
-
-  _setEnabledLinks(on, root) { root.querySelectorAll("[data-link]").forEach(a => a.classList.toggle("nb-disabled", !on)); }
-  _link(key) { return this._readConfig().links?.[key] || ""; }
 
   _relativeTime(iso) {
     const d = new Date(iso); const now = new Date();
@@ -133,24 +78,22 @@ class NBLanding extends Application {
 Hooks.once("init", () => {
   game.settings.register("neon-blood-landing", "configJSON", {
     name: "Landing Config (JSON)",
-    hint: "Edit as JSON. Use uuid:... or foundry://... for deep links.",
+    hint: "GM-only: Edit heat, cred, and nextJob here. Broadcasts to all players.",
     scope: "world",
     config: true,
     type: String,
-    default: JSON.stringify(NBLanding.defaults(), null, 2)
-  });
-  game.settings.register("neon-blood-landing", "remember", {
-    name: "Remember unlock for all",
-    scope: "world",
-    config: false,
-    type: Boolean,
-    default: false
+    default: JSON.stringify(NBLanding.defaults(), null, 2),
+    onChange: value => {
+      if (game.user.isGM) {
+        const parsed = JSON.parse(value);
+        game.socket.emit("module.neon-blood-landing", { type: "updateConfig", config: parsed });
+      }
+    }
   });
 });
 
 Hooks.on("ready", () => {
-  const cfg = new NBLanding()._readConfig();
-  if (cfg.openOnLogin) new NBLanding().render(true);
+  if (game.user.isGM) new NBLanding().render(true);
 });
 
 Hooks.on("getSceneControlButtons", (controls) => {

@@ -7,42 +7,20 @@
         <div class="nb-sub">New Elysium Operations Hub</div>
       </div>
     </div>
-    <nav class="nb-links">
-      <a class="nb-btn secondary" data-link="foundry">Enter Foundry</a>
-      <a class="nb-btn primary" data-link="discord">Join Discord</a>
-      <a class="nb-btn" data-link="rules">Rules</a>
-    </nav>
   </header>
 
   <section class="nb-hero">
     <div>
       <h1><span>Welcome to</span> <span class="nb-neon1">New Elysium</span> <span class="nb-neon2">Ops</span></h1>
       <div class="nb-sub">Your crew command node. Jobs, heat, dossiers. Synced to the table.</div>
-      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-        <a class="nb-btn primary" data-link="foundry">Enter the Table</a>
-        <a class="nb-btn secondary" data-link="jobs">View Jobs</a>
-        <a class="nb-btn" id="nb-status" data-state="">Server Status</a>
-      </div>
     </div>
-    <aside>
-      <div id="nb-gate">
-        <strong>Access Code</strong>
-        <input id="nb-code" placeholder="Enter code" />
-        <div style="display:flex; gap:8px;">
-          <a class="nb-btn primary" id="nb-unlock">Unlock Links</a>
-          <a class="nb-btn secondary" id="nb-remember">Remember</a>
-          <a class="nb-btn" id="nb-ping">Ping Server</a>
-        </div>
-      </div>
-    </aside>
   </section>
 
   <section class="nb-grid">
     <article class="nb-card">
       <h3>Job Board</h3>
-      <div>{{cfg.nextJob.title}} · {{cfg.nextJob.whenISO}} ({{relative}})</div>
+      <div id="nb-job-link" style="cursor:pointer;text-decoration:underline;">{{cfg.nextJob.title}} · {{cfg.nextJob.whenISO}} ({{relative}})</div>
       <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
-        <a class="nb-btn" data-link="jobs">Open Board</a>
         <span class="nb-pill">{{cfg.nextJob.count}} listed</span>
       </div>
     </article>
@@ -51,28 +29,10 @@
       <h3>Heat & Street Cred</h3>
       <div>Current Heat: <strong>{{cfg.heat}}</strong></div>
       <div>Street Cred: <strong>{{cfg.cred}}</strong></div>
-      <div style="margin-top:6px;"><a class="nb-btn" data-link="heat">View Tracker</a></div>
-    </article>
-
-    <article class="nb-card">
-      <h3>Intel Dossiers</h3>
-      <div>Megacorps, gangs, and contacts at your fingertips.</div>
-      <div style="margin-top:6px;"><a class="nb-btn" data-link="dossiers">Browse Intel</a></div>
-    </article>
-
-    <article class="nb-card">
-      <h3>Ops Status</h3>
-      <div>Foundry World: <strong>{{cfg.worldName}}</strong></div>
-      <div>Players Online: <strong id="nb-online">0</strong></div>
-      <div style="margin-top:6px; font-size:11px; color:#94a3b8;">Tip: wire a /status endpoint for real data.</div>
     </article>
   </section>
 
   <footer class="nb-footer">
     <div>© {{year}} Neon Blood. Run silent. Run bright.</div>
-    <div style="display:flex; gap:8px;">
-      <a class="nb-btn" data-link="privacy">Privacy</a>
-      <a class="nb-btn" data-link="credits">Credits</a>
-    </div>
   </footer>
 </section>

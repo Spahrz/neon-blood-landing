@@ -2,10 +2,10 @@
   "id": "neon-blood-landing",
   "type": "module",
   "title": "Neon Blood Landing",
-  "description": "In-Foundry landing hub for Neon Blood with neon UI, job teaser, heat, and quick links.",
-  "version": "1.2.0",
+  "description": "In-Foundry landing hub for Neon Blood with neon UI, GM-editable heat/cred/jobs, and quick links to Discord events.",
+  "version": "1.3.0",
   "compatibility": {
-    "minimum": "12",
+    "minimum": "13",
     "verified": "13",
     "maximum": "13"
   },
